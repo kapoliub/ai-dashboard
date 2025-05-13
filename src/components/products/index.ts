@@ -1,0 +1,1 @@
+export { default as ProductFormDialog } from '@/components/products/product-form-dialog';

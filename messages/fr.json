@@ -1,0 +1,23 @@
+{
+    "nav": {
+      "dashboard": "Dashboard",
+      "users": "Users",
+      "products": "Products",
+      "ai": "AI Chat",
+      "settings": "Settings",
+      "title": "Admin Panel",
+      "logout": "Logout"
+    },
+    "settings": {
+      "title": "Settings",
+      "profile": "Profile",
+      "password": "Password",
+      "theme": "Dark theme"
+    },
+    "auth": {
+      "login": "Login",
+      "register": "Register",
+      "forgot": "Forgot password?"
+    }
+  }
+  

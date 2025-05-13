@@ -1,0 +1,23 @@
+{
+    "nav": {
+      "dashboard": "Panel",
+      "users": "Usuarios",
+      "products": "Productos",
+      "ai": "Chat IA",
+      "settings": "Ajustes",
+      "title": "Panel de Administración",
+      "logout": "Cerrar sesión"
+    },
+    "settings": {
+      "title": "Ajustes",
+      "profile": "Perfil",
+      "password": "Contraseña",
+      "theme": "Tema oscuro"
+    },
+    "auth": {
+      "login": "Iniciar sesión",
+      "register": "Registrarse",
+      "forgot": "¿Olvidaste tu contraseña?"
+    }
+  }
+  
