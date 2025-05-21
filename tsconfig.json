@@ -22,15 +22,10 @@
     "paths": {
       "@": ["src"],
       "@/components/*": ["src/components/*"],
-      "@/components/layout/*": ["src/components/layout/*"],
-      "@/components/providers/*": ["src/components/providers/*"],
-      "@/components/ui/*": ["src/components/ui/*"],
-      "@/components/users/*": ["src/components/users/*"],
-      "@/components/products/*": ["src/components/products/*"],
-      "@/components/settings/*": ["src/components/settings/*"],
       "@/utils/*": ["src/utils/*"],
       "@/theme": ["src/theme"],
-      "@/i18n/*": ["src/i18n/*"]
+      "@/i18n/*": ["src/i18n/*"],
+      "@/hooks": ["src/hooks"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

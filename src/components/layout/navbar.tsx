@@ -14,10 +14,12 @@ import { useColorMode } from '@/components/providers/theme-provider';
 import { useAuth }      from '@/components/providers/auth-provider';
 
 import { useTranslations, useLocale } from 'next-intl';
-import { useRouter, usePathname }     from '@/i18n/navigation';   // ✅
 
 // масив локалей із src/i18n/request.ts
-import { locales } from '@/i18n/request';
+
+import { useRouter } from 'next/navigation';
+import Cookies from 'js-cookie';
+import { SUPPORTED_LOCALES } from '@/utils/constants';
 
 interface Props { onMenu: () => void }
 
@@ -30,15 +32,15 @@ export default function Navbar({ onMenu }: Props) {
 
   const tNav     = useTranslations('nav');
   const locale   = useLocale();
-  const pathname = usePathname();          // '/dashboard'
+  // const pathname = usePathname();          // '/dashboard'
   const router   = useRouter();
-  console.log({locale});
   
-  const changeLocale = (lng: string) => {
-    console.log({lng});
-    if (lng === locale) return;            // уже активна
-    router.replace(pathname, { locale: lng });
-    router.refresh();                      // примусовий перерендер
+  const changeLocale = async (lng: string) => {
+    if (lng === locale) return;  // Already active
+    Cookies.set('NEXT_LOCALE', lng);
+    // Set the locale without changing the URL
+    router.refresh();
+    // Force a hard refresh to ensure all components are re-rendered with new locale
   };
 
   const [menuEl, setMenuEl] = useState<null | HTMLElement>(null);
@@ -68,7 +70,7 @@ export default function Navbar({ onMenu }: Props) {
             '.MuiSelect-icon': { color: 'inherit' }
           }}
         >
-          {locales.map((l) => (
+          {SUPPORTED_LOCALES.map((l) => (
             <MenuItem key={l} value={l}>
               {l.toUpperCase()}
             </MenuItem>

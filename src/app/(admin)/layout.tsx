@@ -31,6 +31,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           width: { md: `calc(100% - ${drawerWidth}px)` },
           backgroundColor: 'background.default',
           minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          maxHeight: `calc(100vh - ${toolbarHeight + 24}px)`,
+          overflow: 'hidden'
         }}
       >
         {children}

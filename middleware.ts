@@ -2,8 +2,8 @@
 import {NextRequest, NextResponse} from 'next/server';
 import Negotiator from 'negotiator';
 import {match} from '@formatjs/intl-localematcher';
-import {locales, defaultLocale} from '@/i18n/request';
-import createMiddleware from 'next-intl/middleware';
+import { SUPPORTED_LOCALES, DEFAULT_LOCALE } from '@/utils/constants';
+// import createMiddleware from 'next-intl/middleware';
 
 function getBestLocale(req: NextRequest) {
   const negotiatorHeaders: Record<string, string> = {};
@@ -12,7 +12,7 @@ function getBestLocale(req: NextRequest) {
   });
 
   const languages = new Negotiator({headers: negotiatorHeaders}).languages();
-  return match(languages, locales, defaultLocale);
+  return match(languages, SUPPORTED_LOCALES, DEFAULT_LOCALE);
 }
 
 export function middleware(req: NextRequest) {
@@ -29,7 +29,7 @@ export function middleware(req: NextRequest) {
 
   // 1️⃣ Отримаємо локаль із cookie або Accept-Language
   const cookieLocale = req.cookies.get('NEXT_LOCALE')?.value;
-  const detectedLocale = locales.includes(cookieLocale as typeof locales[number])
+  const detectedLocale = SUPPORTED_LOCALES.includes(cookieLocale as typeof SUPPORTED_LOCALES[number])
     ? cookieLocale
     : getBestLocale(req);
 
@@ -39,11 +39,11 @@ export function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
-export default createMiddleware({
-  locales,
-  defaultLocale,
-  localePrefix: 'never' // ⬅️ жодного /en у URL
-});
+// export default createMiddleware({
+//   locales: SUPPORTED_LOCALES,
+//   defaultLocale: DEFAULT_LOCALE,
+//   localePrefix: 'never' // ⬅️ жодного /en у URL
+// });
 
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico|api).*)'],

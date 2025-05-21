@@ -1,16 +1,15 @@
-import {getRequestConfig} from 'next-intl/server';
+'use server';
 
-export const locales = [
-    'en', // English
-    'es', // Español
-    'fr', // Français
-    'de', // Deutsch
-  ] as const;
-  
-  export const defaultLocale = 'en';
+import {getRequestConfig} from 'next-intl/server';
+import { cookies } from 'next/headers';
+import { SUPPORTED_LOCALES, DEFAULT_LOCALE } from '@/utils/constants';
+
  
 export default getRequestConfig(async ({ locale }) => {
-  const localeToUse = !locale || !locales.includes(locale as typeof locales[number]) ? defaultLocale : locale;
+  const cookieLocale = (await cookies()).get('NEXT_LOCALE')?.value;
+  const predefinedLocale = locale || cookieLocale || '';
+  
+  const localeToUse = !SUPPORTED_LOCALES.includes(predefinedLocale as typeof SUPPORTED_LOCALES[number]) ? DEFAULT_LOCALE : predefinedLocale;
 
   return {
     locale: localeToUse,

@@ -1,23 +1,18 @@
-import { NextIntlClientProvider, useMessages, useLocale } from 'next-intl';
+import { NextIntlClientProvider } from 'next-intl';
 import AuthProvider  from '@/components/providers/auth-provider';
 import ThemeProvider from '@/components/providers/theme-provider';
-// import { getLocale, getMessages, } from 'next-intl/server';
-export const dynamic = 'force-dynamic'; // ⬅️ додай на час відладки
-
+import { getMessages, getLocale } from 'next-intl/server';
 
 interface LocaleLayoutProps {
   children: React.ReactNode;
   params: { locale: string };
 }
 
-export default function LocaleLayout({
+export default async function LocaleLayout({
   children,
 }: LocaleLayoutProps) {
-  const locale = useLocale(); 
-  const messages = useMessages();
-
-  console.log({locale, messages});
-  
+  const locale = await getLocale(); 
+  const messages = await getMessages();
 
   return (
     <html lang={locale}>
