@@ -4,27 +4,33 @@ import {
   Box, Typography, TextField, IconButton, Paper, List, ListItem,
   Avatar, MenuItem, Select, IconButton as MIconButton, Dialog,
   DialogActions, DialogContent, DialogContentText, DialogTitle, Button,
-  InputBase
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SendIcon from '@mui/icons-material/Send';
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useMemo } from 'react';
 import { Message, useChatSession } from '@/hooks';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github.css';
+import { DownloadChatButton, FileUploader } from '@/components/chat';
+import { useColorMode } from '@/components/providers/theme-provider';
 
 export default function AIPage() {
   const {
     sessionId,
     messages,
     input,
+    isTyping,
+    uploadedFile,
     setInput,
     send,
     resetSession,
-    setSessionId
+    setSessionId,
+    setUploadedFile
   } = useChatSession();
+
+  const { mode } = useColorMode();
 
   const [sessionList, setSessionList] = useState<{ id: string, label: string }[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -51,7 +57,7 @@ export default function AIPage() {
   useEffect(() => {
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 200);
+    }, 300);
   }, [messages]);
 
   const confirmDelete = (id: string) => {
@@ -81,25 +87,26 @@ export default function AIPage() {
     setSessionToDelete(null);
   };
 
-  const currentSessionLabel = sessionList.find((s) => s.id === sessionId)?.label || '+ New Session';
+  const currentSessionLabel = useMemo(() => sessionList.find((s) => s.id === sessionId)?.label || '+ New Session', [sessionList, sessionId]);
+  const filteredSessions = useMemo(() => sessionList.filter((s) => s.label.toLowerCase().includes(filter.toLowerCase())), [sessionList, filter]);
   const isOnlyEmptySession = sessionList.length === 1 && sessionList[0].id === sessionId && currentSessionLabel === '(No message)';
-  const filteredSessions = sessionList.filter((s) => s.label.toLowerCase().includes(filter.toLowerCase()));
 
   return (
-    <Box sx={{ p: 4, display: 'flex', flexDirection: 'column', flex: 1, height: '100%' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, height: '100%' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h4">AI Assistant</Typography>
-        <Box>
-          <InputBase
+        <Typography variant="h4" sx={{whiteSpace: 'nowrap'}}>AI Assistant</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <TextField
             placeholder="Search sessions"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            sx={{ mr: 2, border: '1px solid', px: 1, borderRadius: 1 }}
+            size="small"
+            sx={{ mx: 1 }}
           />
           <Select
             size="small"
             value={sessionId || ''}
-            sx={{ width: '350px' }}
+            sx={{ width: '100%' }}
             displayEmpty
             renderValue={() => currentSessionLabel}
             onChange={(e) => {
@@ -148,6 +155,7 @@ export default function AIPage() {
               + New Session
             </MenuItem>
           </Select>
+          <DownloadChatButton messages={messages} chatLabel={currentSessionLabel} />
         </Box>
       </Box>
 
@@ -166,13 +174,22 @@ export default function AIPage() {
                   {msg.role === 'user' ? 'U' : 'A'}
                 </Avatar>
                 <Box sx={{
-                  bgcolor: msg.role === 'user' ? 'primary.main' : 'grey.300',
+                  bgcolor: msg.role === 'user' ? 'primary.main' : mode === 'dark' ? 'grey.800' : 'grey.300',
                   color: msg.role === 'user' ? 'primary.contrastText' : 'text.primary',
                   px: 2,
                   py: 1,
                   borderRadius: 2,
                   maxWidth: '45vw',
-                  wordBreak: 'break-word'
+                  wordBreak: 'break-word',
+
+                  '& p': {
+                    '&:first-of-type': {
+                      mt: 0
+                    },
+                    '&:last-of-type': {
+                      mb: 0
+                    }
+                  }
                 }}>
                   <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
                     {msg.text}
@@ -185,16 +202,74 @@ export default function AIPage() {
         </List>
       </Paper>
 
-      <Box sx={{ display: 'flex', gap: 1 }}>
+      <Box
+        sx={{
+          border: '1px solid #ccc',
+          borderRadius: 2,
+          display: 'flex',
+          flexDirection: 'column',
+          p: 2,
+          gap: 1,
+          bgcolor: 'background.paper'
+        }}
+      >
+        {/* Input */}
         <TextField
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => {
+            if (e.target.value.length <= 500) {
+              setInput(e.target.value);
+            }
+          }}
           fullWidth
-          label="Ask something…"
+          multiline
+          minRows={1}
+          maxRows={4}
+          inputProps={{
+            rows: 1
+          }}
+          placeholder="Ask something..."
+          helperText={`${input.length}/500`}
+          FormHelperTextProps={{ sx: { position: 'absolute', top: 0, right: 0 } }}
+          error={input.length > 500}
         />
-        <IconButton onClick={send} color="primary">
-          <SendIcon />
-        </IconButton>
+        {/* Action buttons */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+          <FileUploader onTextExtracted={setUploadedFile} />
+          {uploadedFile && (
+          <Box
+            sx={{
+              border: '1px solid',
+              borderColor: 'info.light',
+              borderRadius: 1,
+              pl: 1,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              bgcolor: 'info.light',
+              textOverflow: 'ellipsis',
+              overflow: 'hidden',
+              maxWidth: '200px',
+            }}
+          >
+            <Typography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {uploadedFile.name}
+            </Typography>
+            <IconButton
+              size="small"
+              onClick={() => setUploadedFile(null)}
+              title="Remove file"
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        )}
+        </Box>
+          <IconButton onClick={send} color="primary" sx={{ ml: 'auto' }} disabled={isTyping}>
+            <SendIcon />
+          </IconButton>
+        </Box>
       </Box>
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>

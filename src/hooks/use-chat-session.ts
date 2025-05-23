@@ -3,11 +3,17 @@
 import { useState, useEffect } from 'react';
 import { nanoid } from 'nanoid';
 import { getCurrentTime } from '@/utils/helpers';
+import { useToast } from '@/components/providers/toast-provider';
 
 export interface Message {
-  role: 'user' | 'ai';
+  role: 'user' | 'ai' | 'system';
   text: string;
   time: string;
+}
+
+export interface UploadedFile {
+  text: string;
+  name: string;
 }
 
 export function getSessionList(): { id: string; label: string }[] {
@@ -32,6 +38,10 @@ export function useChatSession() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
+
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -55,6 +65,8 @@ export function useChatSession() {
   useEffect(() => {
     if (!sessionId) return;
     const msgs = getMessagesFromStorage(sessionId);
+
+    localStorage.setItem('session_id', sessionId);
     setMessages(msgs);
   }, [sessionId]);
 
@@ -64,58 +76,91 @@ export function useChatSession() {
 
   const send = async () => {
     if (!input.trim() || !sessionId) return;
-
-    const newMsg: Message = {
+  
+    const prompt: Message = {
       role: 'user',
-      text: input,
+      text: uploadedFile
+        ? `${input}\n\n📎 File attached: ${uploadedFile.name}`
+        : input,
       time: getCurrentTime()
     };
-
-    const updated = [...messages, newMsg];
-    setMessages(updated);
-    setInput('');
-    persist(sessionId, updated);
-
+  
+    const contextMsg: Message | null = uploadedFile
+      ? {
+          role: 'system',
+          text: `The user uploaded a file. Use this content as context:\n\n${uploadedFile}`,
+          time: getCurrentTime()
+        }
+      : null;
+  
+    const requestMessages = contextMsg
+      ? [...messages, contextMsg, prompt]
+      : [...messages, prompt];
+  
+    const displayMessages = [...messages, prompt]; // 🟡 system msg НЕ включаємо в UI
+  
+    if (!isValidMessageArray(requestMessages)) {
+      console.error('Invalid messages:', requestMessages);
+      showToast('Message structure is invalid. Please try again.', 'error');
+      return;
+    }
+  
     // оновлюємо label, якщо це перше повідомлення
-    if (updated.length === 1) {
+    if (messages.length === 0) {
       const sessions = getSessionList();
       const updatedSessions = sessions.map((s) =>
-        s.id === sessionId ? { ...s, label: newMsg.text.slice(0, 20) } : s
+        s.id === sessionId ? { ...s, label: prompt.text.slice(0, 20) } : s
       );
       localStorage.setItem('chat_sessions', JSON.stringify(updatedSessions));
     }
-
-    const res = await fetch('/api/ai/chat', {
-      method: 'POST',
-      body: JSON.stringify({ messages: updated }),
-      headers: { 'Content-Type': 'application/json' }
-    });
-
-    const reader = res.body?.getReader();
-    const decoder = new TextDecoder();
-    let done = false;
-    let buffer = '';
-
-    const aiMsg: Message = { role: 'ai', text: '', time: getCurrentTime() };
-    const withAI = [...updated, aiMsg];
-    setMessages(withAI);
-    persist(sessionId, withAI);
-
-    while (!done && reader) {
-      const { value, done: d } = await reader.read();
-      done = d;
-      const chunk = decoder.decode(value);
-      buffer += chunk;
-
-      setMessages((prev) =>
-        prev.map((m, i) =>
-          i === prev.length - 1 && m.role === 'ai' ? { ...m, text: buffer } : m
-        )
-      );
+  
+    setMessages(displayMessages);      // 🟢 в UI тільки prompt
+    setInput('');
+    persist(sessionId, displayMessages);
+    setIsTyping(true);
+    setUploadedFile(null);       // після відправки — очищаємо
+  
+    try {
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        body: JSON.stringify({ messages: requestMessages }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+  
+      if (!res.ok) throw new Error('Failed to fetch AI response');
+  
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
+      let buffer = '';
+  
+      const aiMsg: Message = { role: 'ai', text: '', time: getCurrentTime() };
+      const withAI = [...displayMessages, aiMsg];
+      setMessages(withAI);
+      persist(sessionId, withAI);
+  
+      while (!done && reader) {
+        const { value, done: d } = await reader.read();
+        done = d;
+        const chunk = decoder.decode(value);
+        buffer += chunk;
+  
+        setMessages((prev) =>
+          prev.map((m, i) =>
+            i === prev.length - 1 && m.role === 'ai' ? { ...m, text: buffer } : m
+          )
+        );
+      }
+  
+      persist(sessionId, [...displayMessages, { ...aiMsg, text: buffer }]);
+    } catch (err) {
+      console.error('AI error:', err);
+      showToast('Error getting response from AI.', 'error');
+    } finally {
+      setIsTyping(false);
     }
-
-    persist(sessionId, [...updated, { ...aiMsg, text: buffer }]);
   };
+  
 
   const resetSession = () => {
     const newId = nanoid();
@@ -130,15 +175,31 @@ export function useChatSession() {
 
     setSessionId(newId);
     setMessages([]);
+    setUploadedFile(null);
   };
 
   return {
     sessionId,
     messages,
     input,
+    isTyping,
+    uploadedFile,
     setInput,
     send,
     resetSession,
-    setSessionId
+    setSessionId,
+    setUploadedFile
   };
+}
+
+function isValidMessageArray(arr: unknown): arr is Message[] {
+  if (!Array.isArray(arr)) return false;
+
+  return arr.every((msg) =>
+    msg &&
+    typeof msg.role === 'string' &&
+    ['user', 'ai', 'system'].includes(msg.role) &&
+    typeof msg.text === 'string' &&
+    typeof msg.time === 'string'
+  );
 }

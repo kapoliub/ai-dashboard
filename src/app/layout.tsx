@@ -2,6 +2,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import AuthProvider  from '@/components/providers/auth-provider';
 import ThemeProvider from '@/components/providers/theme-provider';
 import { getMessages, getLocale } from 'next-intl/server';
+import ToastProvider from '@/components/providers/toast-provider';
 
 interface LocaleLayoutProps {
   children: React.ReactNode;
@@ -19,7 +20,9 @@ export default async function LocaleLayout({
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider>
-            <AuthProvider>{children}</AuthProvider>
+            <ToastProvider>
+              <AuthProvider>{children}</AuthProvider>
+            </ToastProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>
