@@ -15,7 +15,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <Box sx={{ display: 'flex' }}>
       {/* Верхня панель */}
-      <Navbar onMenu={() => setMobileOpen(true)} />
+      <Navbar onMenu={() => setMobileOpen(!mobileOpen)} />
 
       {/* Бокове меню */}
       <Sidebar open={mobileOpen} onClose={() => setMobileOpen(false)} />

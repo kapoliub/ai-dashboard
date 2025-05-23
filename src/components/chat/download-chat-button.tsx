@@ -1,7 +1,6 @@
-import { Message } from '@/hooks';
 import DownloadIcon from '@mui/icons-material/Download';
 import { IconButton } from '@mui/material';
-
+import { Message } from '@/components/providers/chat-provider';
 interface DownloadChatButtonProps {
     messages: Message[];
     chatLabel: string;
@@ -32,7 +31,7 @@ export default function DownloadChatButton({ messages, chatLabel }: DownloadChat
       };
 
   return (
-    <IconButton onClick={handleExport} title="Export Chat">
+    <IconButton onClick={handleExport} title="Export Chat" disabled={!messages.length}>
       <DownloadIcon />
     </IconButton>
   );
