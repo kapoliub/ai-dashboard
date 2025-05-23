@@ -13,13 +13,10 @@ import { useTheme } from '@mui/material/styles';
 import { useColorMode } from '@/components/providers/theme-provider';
 import { useAuth }      from '@/components/providers/auth-provider';
 
-import { useTranslations, useLocale } from 'next-intl';
+import { useTranslations } from 'next-intl';
 
-// масив локалей із src/i18n/request.ts
-
-import { useRouter } from 'next/navigation';
-import Cookies from 'js-cookie';
 import { SUPPORTED_LOCALES } from '@/utils/constants';
+import useLocaleChanger from 'src/hooks/use-locale-changer';
 
 interface Props { onMenu: () => void }
 
@@ -29,20 +26,10 @@ export default function Navbar({ onMenu }: Props) {
 
   const { mode, toggle } = useColorMode();
   const { user, logout } = useAuth();
+  const { currentLocale, changeLocale } = useLocaleChanger();
 
-  const tNav     = useTranslations('nav');
-  const locale   = useLocale();
-  // const pathname = usePathname();          // '/dashboard'
-  const router   = useRouter();
+  const tNav = useTranslations('nav');
   
-  const changeLocale = async (lng: string) => {
-    if (lng === locale) return;  // Already active
-    Cookies.set('NEXT_LOCALE', lng);
-    // Set the locale without changing the URL
-    router.refresh();
-    // Force a hard refresh to ensure all components are re-rendered with new locale
-  };
-
   const [menuEl, setMenuEl] = useState<null | HTMLElement>(null);
 
   return (
@@ -62,7 +49,7 @@ export default function Navbar({ onMenu }: Props) {
         {/* Перемикач мов */}
         <Select
           variant="standard"
-          value={locale}
+          value={currentLocale}
           onChange={(e) => changeLocale(e.target.value)}
           sx={{
             mr: 2,

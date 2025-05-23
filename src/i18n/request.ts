@@ -11,8 +11,18 @@ export default getRequestConfig(async ({ locale }) => {
   
   const localeToUse = !SUPPORTED_LOCALES.includes(predefinedLocale as typeof SUPPORTED_LOCALES[number]) ? DEFAULT_LOCALE : predefinedLocale;
 
+  let translationFile;
+
+  try {
+    translationFile = await import(`../../messages/${localeToUse}.json`);
+  } catch (error) {
+    console.error(error);
+    translationFile = await import(`../../messages/${DEFAULT_LOCALE}.json`);
+  }
+
+
   return {
     locale: localeToUse,
-    messages: (await import(`../../messages/${localeToUse}.json`)).default
+    messages: translationFile.default
   };
 });

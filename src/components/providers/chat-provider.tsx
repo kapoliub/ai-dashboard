@@ -147,16 +147,23 @@ export interface Message {
             persist(sessionId, withAI);
         
             while (!done && reader) {
-            const { value, done: d } = await reader.read();
-            done = d;
-            const chunk = decoder.decode(value);
-            buffer += chunk;
-        
-            setMessages((prev) =>
-                prev.map((m, i) =>
-                i === prev.length - 1 && m.role === 'ai' ? { ...m, text: buffer } : m
-                )
-            );
+              const { value, done: d } = await reader.read();
+              
+              if(!value) {
+                done = true;
+                showToast('Error getting response from AI.', 'error');
+                break;
+              }
+              
+              done = d;
+              const chunk = decoder.decode(value);
+              buffer += chunk;
+          
+              setMessages((prev) =>
+                  prev.map((m, i) =>
+                  i === prev.length - 1 && m.role === 'ai' ? { ...m, text: buffer } : m
+                  )
+              );
             }
         
             persist(sessionId, [...displayMessages, { ...aiMsg, text: buffer }]);

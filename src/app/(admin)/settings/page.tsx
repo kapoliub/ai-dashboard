@@ -1,7 +1,8 @@
-import { Grid, Typography } from '@mui/material';
+import { Grid, Paper, Stack, Typography } from '@mui/material';
 import ProfileForm from '@/components/settings/profile-form';
 import PasswordForm from '@/components/settings/password-form';
 import ThemeToggleCard from '@/components/settings/theme-toggle-card';
+import { LanguageSwitcher } from '@/components/settings';
 
 export default function SettingsPage() {
   return (
@@ -18,7 +19,12 @@ export default function SettingsPage() {
         </Grid>
 
         <Grid item xs={12}>
-          <ThemeToggleCard />
+          <Paper sx={{ p: 3 }}>
+            <Stack direction={{xs: 'column', sm: 'row'}} spacing={2} justifyContent="space-between" alignItems="center">
+              <LanguageSwitcher />
+              <ThemeToggleCard />
+            </Stack>
+          </Paper>
         </Grid>
       </Grid>
     </>

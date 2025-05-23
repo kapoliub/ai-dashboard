@@ -1,5 +1,5 @@
 import { streamText } from 'ai';
-import { openai }      from '@ai-sdk/openai';
+import { openai } from '@ai-sdk/openai';
 import { NextRequest } from 'next/server';
 
 export const runtime = 'edge';
@@ -7,7 +7,6 @@ export const runtime = 'edge';
 export async function POST(req: NextRequest) {
   const { messages } = await req.json();
 
-  /* Fallback‑стрім, якщо ключа немає */
   if (!process.env.OPENAI_API_KEY) {
     const encoder = new TextEncoder();
     const mock = new ReadableStream({
@@ -21,7 +20,7 @@ export async function POST(req: NextRequest) {
     });
     return new Response(mock, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
   }
-  /* Реальний стрім OpenAI — apiKey береться з env */
+
   try {
     const result = await streamText({
       model: openai('gpt-4o-mini'),
